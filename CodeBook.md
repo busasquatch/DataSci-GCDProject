@@ -8,8 +8,10 @@ Davide Anguita, Alessandro Ghio, Luca Oneto, Xavier Parra and Jorge L. Reyes-Ort
 
 ### Dataset Structure  
 The file is tab-delmited. 
+The file is an aggregation of the average mean and average standard deviation, aggregated by the activity, feature, and axial direction for each of the 30 subjects participating in the experiment. Subjects were assigned to either a train(ing) or test dataset.  
+
 ### Dataset Dimensions
-The dataset **tidydata.txt** contains 5940 rows (observations) and 6 columns (variables).   
+The dataset **tidydata.txt** contains 5940 rows (observations) and 7 columns (variables).   
 
 ### Dataset Variables
 **subject**  
@@ -17,6 +19,13 @@ Description: The id number of the subject
 Type: numeric, integer    
 Values (30)  
 * 1 through 30  
+
+**set**  
+Description: Identifies each subject as being part of the **test** or **train** group.  
+Type: string  
+Values (2)  
+* test
+* train
 
 **activity**  
 Description: The activity being performed  
