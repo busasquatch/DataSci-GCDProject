@@ -15,6 +15,15 @@
 # unzip(temp)
 
 ##################################
+##BEGIN Load Required Packages
+##################################
+library(plyr)
+library(reshape2)
+##################################
+##END Load Required Packages
+##################################
+
+##################################
 ##BEGIN File names
 ##################################
 #x tables are the measurements
@@ -63,13 +72,22 @@ activity.type <- read.table(filename.activity.labels, header = FALSE)
 ##END File reads
 ##################################
 
-##################################
+##########################################################
 ##BEGIN Column names
-##################################
+#This section starts to meet Milestone 4,
+#which is to give variables meaningful
+#column names.  This process continues
+#througout the script.
+
+#As read, all column headers are currently in the 
+#format 'V#', where # is a number indicating the column
+#number.
+##########################################################
 #give the features table meaningful column names
 names(features) <- c("featureId","feature")
 
-#assign the features list to the column names of [test|train].measures
+#assign the elements of features column 2 (the feature description)
+#to the column names of [test|train].measures
 names(test.measures) <- features[,2]
 names(train.measures) <- features[,2]
 
@@ -86,28 +104,35 @@ names(activity.type) <- c("activityId","activity")
 ##################################
 ##END Column names
 ##################################
+
 ##################################
-##BEGIN Data Frame Building
+##BEGIN Building a Single Dataset
+#1. Join the test dataframes together
+#2. Join the train dataframes together
+#3. Join the test and train dataframes.
 ##################################
 #Use join() form the plyr package to merge datasets
-#don't use merge() because file gets resorted, even if sort argument is set to FALSE
-library(plyr)
-#add the descriptive activity names to both the test and train 
-#activity dataframes
+#don't use merge() because file gets resorted, even 
+#if sort argument is set to FALSE
+
+#Substep 1
+#Add the activity description to the test activity dataframe
+#match on activityId
 test.activity <- join(x = test.activity, y = activity.type
                       ,by = "activityId", type = "left" )
+
+#Substep 2
+#Add the activity description to the train activity dataframe
+#match on activityId
 train.activity <- join(x = train.activity, y = activity.type
                        ,by = "activityId", type = "left" )
 
-
-#at this point, activity.type can be removed from memory
-rm(activity.type)
-
+#Substep 3
 #put the test subjects, activity, and measures in one dataframe, add a column
 #to identify these as the test set
 test.measures <- cbind(set = "test", test.subject, test.activity, test.measures)
 
-
+#Substep 4
 #put the train subject, activity, and measures in one dataframe, add a column
 #to identify these as the train set
 train.measures <- cbind(set = "train", train.subject, train.activity, train.measures)
@@ -121,138 +146,184 @@ measures <- rbind(test.measures, train.measures)
 #********************************************************
 #END MILESTONE #1
 #********************************************************
-#at this point, the base test and train tables can be removed 
-#from the parent environment
+
+###BEGIN Garbage Collection
+#release objects from memory
+rm(activity.type)
 rm(test.subject)
 rm(test.activity)
 rm(test.measures)
 rm(train.subject)
 rm(train.activity)
 rm(train.measures)
+###END Garbage Collection
 
-#********************************************************
-#BEGIN MILESTONE #2
-#Extract only the measurements on the mean and standard dev
-#for each measurement
-#********************************************************
+##################################
+##END Building a Single Dataset
+##################################
+
+################################################
+##BEGIN Extracting mean and standard deviation
 #Objective is to create a dataframe with 
-#set
-#subject
-#activityId
-#activity
-#all measurements containing the string "mean()"
-#all measurements containing the string "std()"
+#-set
+#-subject
+#-activityId
+#-activity
+#-all measurements containing the string "mean()"
+#-all measurements containing the string "std()"
+################################################
 
 #the column names in [measures] are
 #1:4 - set, subject, activityId, activity 
 #5:565 - freature names of measurements
-#we want to keep 1:4, and any of 5:565 where the string
+#keep 1:4, and any of 5:565 where the string
 #mean() or std() is found
 
-#create a logical vector containing TRUE for the first four elements, and TRUE for any column name in measures (columns 5 - 565 only) that contain the string 'mean()' or 'std()'.  These are the columns that will be subsetted into a dataframe
+#create a logical vector containing TRUE for the first 
+#four elements, and TRUE for any column name in measures
+#(columns 5 - 565 ) that contain the string 'mean()' 
+#or 'std()'.  These are the columns that will be subsetted 
+#into a dataframe
 columns.to.keep <- c(rep(TRUE,4), grepl("std|mean[\\(\\)]", names(measures[5:565])))
 
-#subset all rows of measures dataframe for only those columns in which columns.to.keep is TRUE
+#********************************************************
+#BEGIN MILESTONE #2
+#********************************************************
+#subset all rows of measures dataframe for only those columns in which 
+#columns.to.keep is TRUE
 data <- measures[, c(columns.to.keep)]
-
-##dataframes measures and features can be released from memory
-rm(measures)
-rm(features)
-
 #********************************************************
 #END MILESTONE #2
-#********************************************************
-#********************************************************
-#BEGIN MILESTONE #3
-#use descriptive acitivity names to name the activities
-#in the dataset
-#********************************************************
-#this milestone was completed during dataframe building
-#prior to milestone 1.
-#********************************************************
-#END MILESTONE #3
+#dataframe [data] is contains all mean() and std() 
+#measurements.
+#data has 10299 observations and 70 variables
 #********************************************************
 
-#********************************************************
-#BEGIN MILESTONE #4 and 5
-# Apprpirate label the data set with descriptvie variable names
-#********************************************************
-#load the reshape2 package
-library(reshape2)
+#BEGIN Garbage Collection
+#release objects from memory
+rm(measures)
+rm(features)
+#END Garbage Collection
+################################################
+##END Extracting mean and standard deviation
+################################################
 
-#use melt() to produce a molten dataset
-#will create a six variable datasest
-#columns are set, subject, activityId, activity, variable (the measure), value (the measurement)
+################################################
+##BEGIN Tidying the dataset
+#This section meets milestones 3, 4, and 5,
+#Make sure all variable names are descriptive.
+#Resahpe data for aggregation
+#although work towards milestone 3 has been done
+#throughout the script.
+################################################
+#use melt() (reshape2 package) to produce a molten dataset
+#Will transform a dataset of 10299 observations and 70 variables
+#into a dataset of 679734 observations and 6 variables 
+#this pivots the dataset on set, subject, activityId, activity
+#and creates observations for each measure (value) and measurement (feature)
 data.molten <- melt(data, id = c(names(data)[1:4]), measure.vars = c(names(data)[-c(1:4)]))
 
 
-##############################
-#BEGIN Step 1
-#put the feature in it's own column and make it a factor
-##############################
+####################################################################
+#BEGIN Tidying the dataset: Feature Desciptives Transformations
+#At this point, the feature desciptions are a concatenation
+#of the feature, the measurement type (mean or standard deviation),
+#and the axial Direction.  This section splits these three
+#items into their own variable.
+####################################################################
+#Substep 1
+#put the feature type in it's own column
 #make the variable being split of class character
 data.molten$variable <- as.character(data.molten$variable)
-#split the long feature name by hyphen, which creates a list
+
+#split the  feature name by hyphen, which creates a list
+#of 679,734 elements, each with 2 or 3 elements representing
+#the feature type, the measurement (mean() or std()), and the 
+#axial direction
 split.variable <- strsplit(data.molten$variable, "\\-")
+
 #create a firstElement function
 firstElement <- function(x) {x[1]}
+
 #iterate through the list and put the first element into a new column in the dataframe.
 data.molten$feature <- sapply(split.variable, firstElement)
+
 #convert this new column to a factor
 data.molten$feature <- as.factor(data.molten$feature)
-##############################
-#END Step 1
-##############################
-##############################
-#BEGIN Step 2
-#put the mean or std in it's own column
-##############################
-#using split.variable list created in step 1
+
+#Subsetp 2
+#put the measurement type (mean or std) in it's own varibale
+#use split.variable list created in substep 1
+
 #create function to extract second element of each list element
 secondElement <- function(x) {x[2]}
+
 #iterate through the list and put the third element into a new column in the dataframe.
 data.molten$valueType <- sapply(split.variable, secondElement)
+
 #get rid of the parentheses in this new variable
 data.molten$valueType <- sub("\\(\\)$", "", data.molten$valueType)
+
 #rename std as sd
 data.molten$valueType <- sub("[s]t[d]", "sd", data.molten$valueType)
-##############################
-#END Step 2
-##############################
-##############################
-#BEGIN Step 3
+
+#Substep 3
 #put axial direction in own column
-##############################
+#use split.variable list created in substep 1
+
+#create function to extract third element of each list element
 thirdElement <- function(x) {x[3]}
+
 #iterate through the list and put the third element into a new column in the dataframe.
 data.molten$axialDirection <- sapply(split.variable, thirdElement)
+
+#convert this new column to a factor
 data.molten$axialDirection <- as.factor(data.molten$axialDirection)
-##############################
-#END Step 3
-#put axial direction in own column
-##############################
+####################################################################
+#END Tidying the dataset: Feature Desciptives Transformations
+####################################################################
 
-#now that we have feature, valueType, and axialDirection in the own column the
-#dataset can be cast to put the value under mean or sd, depending on the type
-#of measurement.
-#First step is to subset the dataframe to get rid of the original varaible
-#column, which was split up into feature, valueType, and axialDirection
+#######################################################################
+#BEGIN Tidying the dataset: Dataset Casting
+#now that feature, valueType, and axialDirection are their own variables
+#the dataset can be cast to put the value under mean or sd, depending
+#on the type of measurement.
+########################################################################
 
-#Next, cast (i.e. widen) the data into a new dataframe
-#take the mean of valueType (mean and sd) grouping by subject, activity, feature, and axialDirection,  
-tidy.data <- dcast(data.molten, subject + activity + feature + axialDirection ~ valueType, fun.aggregate = mean )
+#Substep 1
+#cast (i.e. widen) the data (currently 679,734 observations and 9 variables)
+#into a new dataframe.  Resulting dataframe should taken the mean of the values mean
+#and standard deviation, aggregated by set, subject, activity, feature, and axial
+#direction.   
+tidy.data <- dcast(data.molten, subject + set + activity + feature + axialDirection ~ valueType, fun.aggregate = mean )
 
+#Substep 2
 #since the mean was taken, give the mean and sd columns meaningful names
-names(tidy.data)[5:6] <- c("averageMean", "averageSD")
+names(tidy.data)[6:7] <- c("averageMean", "averageSD")
 
-## other data frames can be removed
+#######################################################################
+#END Tidying the dataset: Dataset Casting
+########################################################################
+
+################################################
+##END Tidying the dataset
+################################################
+
+#BEGIN Garbage Collection
+#release objects from memory
 rm(data.molten)
 rm(data)
 rm(split.variable)
+#END Garbage Collection
 
-#output to file
+################################################
+#BEGIN Write file to directory
+################################################
+#output to file named 'tidydata.txt'
 write.table(tidy.data, file = "./tidydata.txt", sep = "\t", row.names = FALSE )
-
+################################################
+#END Write file to directory
+################################################
 #********************************************************
-#END MILESTONE 4 and 5
+#END OF SCRIPT
 #********************************************************
