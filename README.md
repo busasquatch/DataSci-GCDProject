@@ -255,6 +255,35 @@ Using the logical vector, a dataframe meeting **MILESTONE 2** is constructed, ta
 #columns.to.keep is TRUE
 data <- measures[, c(columns.to.keep)]  
 ```  
+The new dataframe still has 10,299 observations, but now only has 70 variables.  
+
+```
+> names(data)
+ [1] "set"                         "subject"                     "activityId"                 
+ [4] "activity"                    "tBodyAcc-mean()-X"           "tBodyAcc-mean()-Y"          
+ [7] "tBodyAcc-mean()-Z"           "tBodyAcc-std()-X"            "tBodyAcc-std()-Y"           
+[10] "tBodyAcc-std()-Z"            "tGravityAcc-mean()-X"        "tGravityAcc-mean()-Y"       
+[13] "tGravityAcc-mean()-Z"        "tGravityAcc-std()-X"         "tGravityAcc-std()-Y"        
+[16] "tGravityAcc-std()-Z"         "tBodyAccJerk-mean()-X"       "tBodyAccJerk-mean()-Y"      
+[19] "tBodyAccJerk-mean()-Z"       "tBodyAccJerk-std()-X"        "tBodyAccJerk-std()-Y"       
+[22] "tBodyAccJerk-std()-Z"        "tBodyGyro-mean()-X"          "tBodyGyro-mean()-Y"         
+[25] "tBodyGyro-mean()-Z"          "tBodyGyro-std()-X"           "tBodyGyro-std()-Y"          
+[28] "tBodyGyro-std()-Z"           "tBodyGyroJerk-mean()-X"      "tBodyGyroJerk-mean()-Y"     
+[31] "tBodyGyroJerk-mean()-Z"      "tBodyGyroJerk-std()-X"       "tBodyGyroJerk-std()-Y"      
+[34] "tBodyGyroJerk-std()-Z"       "tBodyAccMag-mean()"          "tBodyAccMag-std()"          
+[37] "tGravityAccMag-mean()"       "tGravityAccMag-std()"        "tBodyAccJerkMag-mean()"     
+[40] "tBodyAccJerkMag-std()"       "tBodyGyroMag-mean()"         "tBodyGyroMag-std()"         
+[43] "tBodyGyroJerkMag-mean()"     "tBodyGyroJerkMag-std()"      "fBodyAcc-mean()-X"          
+[46] "fBodyAcc-mean()-Y"           "fBodyAcc-mean()-Z"           "fBodyAcc-std()-X"           
+[49] "fBodyAcc-std()-Y"            "fBodyAcc-std()-Z"            "fBodyAccJerk-mean()-X"      
+[52] "fBodyAccJerk-mean()-Y"       "fBodyAccJerk-mean()-Z"       "fBodyAccJerk-std()-X"       
+[55] "fBodyAccJerk-std()-Y"        "fBodyAccJerk-std()-Z"        "fBodyGyro-mean()-X"         
+[58] "fBodyGyro-mean()-Y"          "fBodyGyro-mean()-Z"          "fBodyGyro-std()-X"          
+[61] "fBodyGyro-std()-Y"           "fBodyGyro-std()-Z"           "fBodyAccMag-mean()"         
+[64] "fBodyAccMag-std()"           "fBodyBodyAccJerkMag-mean()"  "fBodyBodyAccJerkMag-std()"  
+[67] "fBodyBodyGyroMag-mean()"     "fBodyBodyGyroMag-std()"      "fBodyBodyGyroJerkMag-mean()"
+[70] "fBodyBodyGyroJerkMag-std()" 
+```  
 
 #### Substep 3 - Garbage Collection  
 At this point, the measures dataframe can be released from memory.  
@@ -267,3 +296,34 @@ Processes are taken to
 
 Note that steps have been taken previously in the script to give variables descriptive names, and continues here.  
 
+#### Subset 1 - Melt (lengthen and narrow) the Dataset  
+Using the **melt()** function from the reshape2 package, the dataset of 10,299 observations and 70 variables will be transformed in the dataset of 679,734 observations and 6 variables.  This is essentially pivoting the data on set, subject, activityId, activity and creates observations for each measure (value) and measurement (feature).  
+
+```  
+data.molten <- melt(data, id = c(names(data)[1:4]), measure.vars = c(names(data)[-c(1:4)]))
+```  
+The structure of the new **data.molten** dataframe.  
+
+```  
+> str(data.molten)
+'data.frame':  679734 obs. of  6 variables:
+ $ set       : Factor w/ 2 levels "test","train": 1 1 1 1 1 1 1 1 1 1 ...
+ $ subject   : int  2 2 2 2 2 2 2 2 2 2 ...
+ $ activityId: int  5 5 5 5 5 5 5 5 5 5 ...
+ $ activity  : Factor w/ 6 levels "LAYING","SITTING",..: 3 3 3 3 3 3 3 3 3 3 ...
+ $ variable  : Factor w/ 66 levels "tBodyAcc-mean()-X",..: 1 1 1 1 1 1 1 1 1 1 ...
+ $ value     : num  0.257 0.286 0.275 0.27 0.275 ...
+```  
+
+#### Substep 2 - Feature Desciptives Transformations  
+
+At this point, the feature desciptions are a concatenation of the feature, the measurement type (mean or standard deviation), and the axial Direction (X, Y, Z, or none).  This section splits these three items into their own variable.  
+
+## end here
+  
+##### Substep 2.1 - Put feature in it's own column  
+
+Change the datatype of the variable (measure type) to a character so that transformations are not confined by factor levels, and then split the variable into three distinct columns.    
+```  
+data.molten$variable <- as.character(data.molten$variable)
+```  
